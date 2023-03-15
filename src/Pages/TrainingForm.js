@@ -4,6 +4,14 @@ import "../App.css";
 import CollapsibleExample from "./Header";
 
 function TrainingForm() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [studentName, setStudentName] = useState("");
+  const [trainingId, setTrainingId] = useState("");
+  const [fromdate, setFromDate] = useState("");
+  const [enddate, setEndDate] = useState("");
+  const [popupError, setPopupError] = useState("");
+  const [editElement, setEditElement] = useState("");
+
   const [loginDetails, setLoginDetails] = useState({
     studentName: "",
     trainingId: "",
@@ -15,6 +23,42 @@ function TrainingForm() {
   const [loggedData, setLoggedData] = useState();
   const changeHandler = (e) => {
     setLoginDetails({ ...loginDetails, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    // TODO: Handle form submission
+    if (studentName === "" || trainingId === "") {
+      setPopupError("please fill all details");
+    } else {
+      let body = {
+        data: {
+          name: studentName,
+          trainingId: trainingId,
+          fromDate: fromdate,
+          endDate: enddate,
+        },
+      };
+
+      fetch(
+        `http://localhost:1337/api/training-datas/${editElement.toString()}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-type": "application/json",
+          },
+          body: JSON.stringify(body),
+        }
+      ).then(() => {
+        fetchingData();
+        setStudentName("");
+        setTrainingId("");
+        setFromDate("");
+        setEndDate("");
+        setPopupError("");
+        setIsOpen(false);
+      });
+    }
   };
   const submitHandler = () => {
     if (
@@ -43,6 +87,7 @@ function TrainingForm() {
       }).then((response) => {
         console.log(response.status);
         setError("submitted");
+        fetchingData();
       });
       // you can wirte your code here with login details
       console.log(loginDetails);
@@ -60,9 +105,69 @@ function TrainingForm() {
   }, []);
 
   // console.log(loginDetails);
+
+  const deleteHandler = (id) => {
+    // console.log(id)
+    fetch(`http://localhost:1337/api/training-datas/${id.toString()}`, {
+      method: "DELETE",
+    }).then((response) => {
+      console.log(response.status);
+      fetchingData();
+    });
+  };
   return (
     <>
       <CollapsibleExample />
+      {isOpen && (
+        <div className="popup-container">
+          <form className="popup-form" onSubmit={handleSubmit}>
+            <label>
+              Student Name:
+              <input
+                className="popup-input"
+                type="text"
+                value={studentName}
+                onChange={(event) => setStudentName(event.target.value)}
+              />
+            </label>
+            <br />
+            <label>
+              Training Id:
+              <input
+                className="popup-input"
+                type="number"
+                value={trainingId}
+                onChange={(event) => setTrainingId(event.target.value)}
+              />
+            </label>
+            <br />
+            <label>
+              From Data:
+              <input
+                className="popup-input"
+                type="date"
+                value={fromdate}
+                onChange={(event) => setFromDate(event.target.value)}
+              />
+            </label>
+            <br />
+            <label>
+              End Data:
+              <input
+                className="popup-input"
+                type="date"
+                value={enddate}
+                onChange={(event) => setEndDate(event.target.value)}
+              />
+            </label>
+            <br />
+            <button className="popup-submit-button" type="submit">
+              Submit
+            </button>
+            <p className="text-danger">{popupError}</p>
+          </form>
+        </div>
+      )}
       <Container fluid className="login-mainContainer bg-dark">
         <Row className="login-cardContainer px-5">
           <Col>
@@ -160,6 +265,25 @@ function TrainingForm() {
                     <td className="text-light">{each.attributes.trainingId}</td>
                     <td className="text-light">{each.attributes.fromDate}</td>
                     <td className="text-light">{each.attributes.endDate}</td>
+                    <td>
+                      <button
+                        className="btn btn-outline-light"
+                        onClick={() => deleteHandler(each.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-outline-light"
+                        onClick={() => {
+                          setEditElement(each.id);
+                          setIsOpen(true);
+                        }}
+                      >
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
